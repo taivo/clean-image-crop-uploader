@@ -36,38 +36,37 @@ def upload(request):
 @require_POST
 def crop(request):
     try:
-        if request.method == 'POST':
-            box = request.POST.get('cropping', None)
-            imageId = request.POST.get('id', None)
-            uploaded_file = UploadedFile.objects.get(id=imageId)
-            img = Image.open( uploaded_file.file.path, mode='r' )
-            values = [int(x) for x in box.split(',')]
+        box = request.POST.get('cropping', None)
+        imageId = request.POST.get('id', None)
+        uploaded_file = UploadedFile.objects.get(id=imageId)
+        img = Image.open( uploaded_file.file.path, mode='r' )
+        values = [int(x) for x in box.split(',')]
 
-            width = abs(values[2] - values[0])
-            height = abs(values[3] - values[1])
-            if width and height and (width != img.size[0] or height != img.size[1]):
-                croppedImage = img.crop(values).resize((width,height),Image.ANTIALIAS)
+        width = abs(values[2] - values[0])
+        height = abs(values[3] - values[1])
+        if width and height and (width != img.size[0] or height != img.size[1]):
+            croppedImage = img.crop(values).resize((width,height),Image.ANTIALIAS)
 
-            else:
-                raise
+        else:
+            raise
 
-            pathToFile = path.join(settings.MEDIA_ROOT,IMAGE_CROPPED_UPLOAD_TO)
-            if not path.exists(pathToFile):
-                makedirs(pathToFile)
-            pathToFile = path.join(pathToFile,uploaded_file.file.path.split(sep)[-1])
-            croppedImage.save(pathToFile)
+        pathToFile = path.join(settings.MEDIA_ROOT,IMAGE_CROPPED_UPLOAD_TO)
+        if not path.exists(pathToFile):
+            makedirs(pathToFile)
+        pathToFile = path.join(pathToFile,uploaded_file.file.path.split(sep)[-1])
+        croppedImage.save(pathToFile)
 
-            new_file = UploadedFile()
-            f = open(pathToFile, mode='rb')
-            new_file.file.save(uploaded_file.file.name, File(f))
-            f.close()
+        new_file = UploadedFile()
+        f = open(pathToFile, mode='rb')
+        new_file.file.save(uploaded_file.file.name, File(f))
+        f.close()
 
-            data = {
-                'path': new_file.file.url,
-                'id' : new_file.id,
-            }
+        data = {
+            'path': new_file.file.url,
+            'id' : new_file.id,
+        }
 
-            return HttpResponse(simplejson.dumps(data))
+        return HttpResponse(simplejson.dumps(data))
 
     except Exception:
         return HttpResponseBadRequest(simplejson.dumps({'errors': 'illegal request'}))
